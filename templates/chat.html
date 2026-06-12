@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Чат — AI ассистент ДМС</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .chat-header .auth { font-size: 13px; color: #6b7280; margin-right: 12px; white-space: nowrap; }
+        .chat-header .auth a { color: inherit; text-decoration: underline; }
+        .msg.bot code { background: rgba(0,0,0,.06); padding: 1px 4px; border-radius: 4px; font-size: .9em; }
+        .msg.bot strong { font-weight: 700; }
+        .msg.note { background: #fff7ed; color: #9a3412; font-size: 13px; }
+    </style>
 </head>
 <body>
     <div class="chatgpt">
@@ -15,6 +22,7 @@
                 <div class="status">● онлайн</div>
             </div>
             <span class="spacer"></span>
+            <span class="auth" id="authState"></span>
             <button class="link" id="clear" title="Очистить диалог">Очистить</button>
             <a href="/">На главную</a>
         </div>
@@ -30,15 +38,36 @@
     </div>
 
     <script>
+        const LOGGED_IN = {{ 'true' if current_user.is_authenticated else 'false' }};
+        const USER_EMAIL = {{ (current_user.email | tojson) if current_user.is_authenticated else 'null' }};
+
         const msgBox = document.getElementById('messages'),
               input  = document.getElementById('input'),
               btn    = document.getElementById('send'),
-              clearBtn = document.getElementById('clear');
+              clearBtn = document.getElementById('clear'),
+              authEl = document.getElementById('authState');
 
-        function addMsg(role, text, sources=[]) {
+        // Минимальный безопасный рендер markdown: сначала экранируем HTML,
+        // затем включаем **жирный**, `код`, заголовки, маркеры и переносы строк.
+        function renderMarkdown(text) {
+            const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const lines = (text || '').split('\n').map(line => {
+                let l = esc(line);
+                l = l.replace(/^\s*#{1,6}\s+(.*)$/, '<strong>$1</strong>');  // ### Заголовок
+                l = l.replace(/^\s*[-*]\s+/, '• ');                          // - пункт
+                return l;
+            });
+            let html = lines.join('<br>');
+            html = html.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>'); // **жирный**
+            html = html.replace(/`([^`]+?)`/g, '<code>$1</code>');           // `код`
+            return html;
+        }
+
+        function addMsg(role, text, sources = []) {
             const d = document.createElement('div');
             d.className = `msg ${role}`;
-            d.textContent = text;
+            if (role === 'bot') d.innerHTML = renderMarkdown(text);
+            else d.textContent = text;
             if (sources.length) {
                 const s = document.createElement('div');
                 s.className = 'sources';
@@ -49,6 +78,24 @@
             msgBox.appendChild(d);
             msgBox.scrollTop = msgBox.scrollHeight;
             return d;
+        }
+
+        // Подтянуть историю аккаунта при загрузке (только для вошедших).
+        async function loadHistory() {
+            if (!LOGGED_IN) return;
+            try {
+                const res = await fetch('/api/get_dialog_history');
+                if (!res.ok || res.redirected) return;
+                const data = await res.json();
+                const hist = data.history || [];
+                if (!hist.length) return;
+                msgBox.innerHTML = '';
+                addMsg('note', '🕑 Ваша сохранённая история переписки:');
+                for (const h of hist) {
+                    if (h.message)  addMsg('user', h.message);
+                    if (h.response) addMsg('bot', h.response);
+                }
+            } catch (e) { /* нет истории — ничего страшного */ }
         }
 
         function autoGrow() {
@@ -88,12 +135,21 @@
             addMsg('bot', 'Диалог очищен. Чем могу помочь?');
         }
 
+        // Индикатор входа в шапке
+        if (LOGGED_IN) {
+            authEl.innerHTML = `👤 ${USER_EMAIL} · <a href="/logout">Выход</a>`;
+        } else {
+            authEl.innerHTML = `<a href="/login">Войти</a>, чтобы сохранять историю`;
+        }
+
         input.addEventListener('input', () => { btn.disabled = !input.value.trim(); autoGrow(); });
         input.addEventListener('keydown', e => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
         });
         btn.addEventListener('click', send);
         clearBtn.addEventListener('click', clearChat);
+
+        loadHistory();
         input.focus();
     </script>
 </body>
