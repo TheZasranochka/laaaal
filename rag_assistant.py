@@ -28,6 +28,8 @@ class Config:
     # Базовая модель доступна на бесплатном тарифе (GIGACHAT_API_PERS) и расходует
     # меньше токенов, чем Pro/Max. Меняется через env GIGACHAT_MODEL.
     MODEL = os.getenv("GIGACHAT_MODEL", "GigaChat")
+    # Scope OAuth: физлицо — GIGACHAT_API_PERS (по умолчанию), корпоративный ключ — GIGACHAT_API_B2B.
+    SCOPE = os.getenv("GIGACHAT_SCOPE", "GIGACHAT_API_PERS")
     CHUNK_SIZE = 1200
     CHUNK_OVERLAP = 200
     TOP_K_RESULTS = 7
@@ -40,9 +42,10 @@ class Config:
 
 
 class GigaChatRESTClient:
-    def __init__(self, auth_key: str, model: str = "GigaChat"):
+    def __init__(self, auth_key: str, model: str = "GigaChat", scope: str = "GIGACHAT_API_PERS"):
         self.auth_key = auth_key
         self.model = model
+        self.scope = scope
         self.access_token = None
         self.token_expires_at = None
         self.base_url = "https://gigachat.devices.sberbank.ru/api/v1"
@@ -63,7 +66,7 @@ class GigaChatRESTClient:
         try:
             # В продакшене лучше загрузить сертификат Сбера и убрать verify=False
             response = requests.post(self.oauth_url, headers=headers,
-                                     data='scope=GIGACHAT_API_PERS', verify=False, timeout=15)
+                                     data=f'scope={self.scope}', verify=False, timeout=15)
             if response.status_code == 200:
                 data = response.json()
                 self.access_token = data.get('access_token')
@@ -273,7 +276,7 @@ class MedicalAssistant:
     def __init__(self):
         self.config = Config()
         self.rag = RAGProcessor(self.config)
-        self.giga = GigaChatRESTClient(self.config.GIGACHAT_AUTH_KEY, self.config.MODEL)
+        self.giga = GigaChatRESTClient(self.config.GIGACHAT_AUTH_KEY, self.config.MODEL, self.config.SCOPE)
         self.minzdrav = MinzdravSearcher()
         self.sessions: Dict[str, dict] = {}
         self.prompt = self._load_prompt()
