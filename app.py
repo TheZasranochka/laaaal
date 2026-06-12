@@ -1,27 +1,30 @@
 import os
 import uuid
-from flask import Flask, render_template, request, jsonify, session
 from dotenv import load_dotenv
-from rag_assistant import MedicalAssistant
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from dotenv import load_dotenv
-from flask import redirect, url_for, flash
-from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
+# ВАЖНО: загрузить .env ДО импорта rag_assistant — его класс Config читает
+# переменные окружения (GIGACHAT_AUTH_KEY и др.) в момент импорта.
 load_dotenv()
+
+from flask import Flask, render_template, request, jsonify, session
+from flask import redirect, url_for, flash
+from flask_migrate import Migrate
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from extensions import db
+from rag_assistant import MedicalAssistant
+
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change-me-in-prod")
 
-app.config.from_object('config.Config')  
-db = SQLAlchemy(app)  
-migrate = Migrate(app, db) 
+app.config.from_object('config.Config')
+db.init_app(app)
+migrate = Migrate(app, db)
 
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 
-# Модели импортируются ПОСЛЕ создания db (models.py делает `from app import db`),
-# иначе роуты с User/Dialog/MedicalTest падают с NameError.
+# Модели импортируем после init_app. db живёт в extensions.py (см. там про
+# круговой импорт). Импорт здесь регистрирует таблицы перед db.create_all().
 from models import User, Dialog, MedicalTest  # noqa: E402
 
 # Создаём таблицы при старте — работает и под gunicorn, а не только при `python app.py`.
@@ -51,7 +54,7 @@ def chat_page():
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 @app.route("/api/chat", methods=["POST"])
 def api_chat():
@@ -67,6 +70,23 @@ def api_chat():
 
     try:
         res = assistant.ask(cid, msg)
+
+        # Сохраняем удачные ходы диалога в БД (ошибки модели не пишем).
+        if res.get("ok"):
+            try:
+                dlg = Dialog(
+                    user_id=current_user.id if current_user.is_authenticated else None,
+                    chat_id=cid,
+                    diagnosis=res.get("diagnosis"),
+                    message=msg,
+                    response=res["answer"],
+                )
+                db.session.add(dlg)
+                db.session.commit()
+            except Exception as db_err:
+                db.session.rollback()
+                print(f"/api/chat DB save error: {db_err}")
+
         return jsonify({"response": res["answer"], "sources": res["sources"]})
     except Exception as e:
         print(f"/api/chat error: {e}")
@@ -75,8 +95,8 @@ def api_chat():
 @app.route("/chat/clear", methods=["POST"])
 def clear_chat():
     cid = session.get("chat_id")
-    if cid and assistant and cid in assistant.sessions:
-        assistant.sessions[cid] = {"history": []}
+    if cid and assistant:
+        assistant.reset_session(cid)
     return jsonify({"status": "cleared"})
 
 @app.route("/register", methods=["GET", "POST"])
@@ -84,14 +104,17 @@ def register():
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
+        if not email or not password:
+            flash("Укажите email и пароль.", "error")
+            return redirect(url_for("register"))
         if User.query.filter_by(email=email).first():
-            flash("Email уже зарегистрирован.")
+            flash("Email уже зарегистрирован.", "error")
             return redirect(url_for("register"))
         user = User(name=email.split('@')[0], email=email)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
-        flash("Регистрация успешна! Теперь вы можете войти.")
+        flash("Регистрация успешна! Теперь вы можете войти.", "success")
         return redirect(url_for("login"))
     return render_template("register.html")
 
@@ -105,7 +128,7 @@ def login():
         if user and user.check_password(password):
             login_user(user)
             return redirect(url_for("index"))
-        flash("Неверный email или пароль.")
+        flash("Неверный email или пароль.", "error")
     return render_template("login.html")
 
 # Выход пользователя
@@ -116,6 +139,7 @@ def logout():
     return redirect(url_for("index"))
 
 @app.route("/api/add_test", methods=["POST"])
+@login_required
 def add_medical_test():
     data = request.get_json()
     test_name = data.get("test_name")
@@ -156,8 +180,13 @@ def get_medical_tests():
 def get_dialog_history():
     user = current_user  # Получаем текущего пользователя
     try:
-        dialogs = Dialog.query.filter_by(user_id=user.id).all()
-        history = [{"message": dialog.message, "response": dialog.response, "timestamp": dialog.timestamp} for dialog in dialogs]
+        dialogs = Dialog.query.filter_by(user_id=user.id).order_by(Dialog.timestamp).all()
+        history = [{
+            "message": d.message,
+            "response": d.response,
+            "diagnosis": d.diagnosis,
+            "timestamp": d.timestamp.isoformat() if d.timestamp else None,
+        } for d in dialogs]
         return jsonify({"history": history})
     except Exception as e:
         print(f"Ошибка извлечения истории диалогов: {e}")

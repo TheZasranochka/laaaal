@@ -1,4 +1,4 @@
-from app import db
+from extensions import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
@@ -21,9 +21,11 @@ class User(db.Model, UserMixin):
 
 class Dialog(db.Model):
     __tablename__ = 'dialogs'
-    
+
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    chat_id = db.Column(db.String(64), index=True)  # uuid сессии — группирует один диалог
+    diagnosis = db.Column(db.String, nullable=True)  # диагноз, с которым отвечал ассистент
     message = db.Column(db.String)
     response = db.Column(db.String)
     timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())

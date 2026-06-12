@@ -25,9 +25,9 @@
         <div class="collapse navbar-collapse" id="nav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item"><a href="/" class="nav-link">Главная</a></li>
-                <li class="nav-item"><a href="#" class="nav-link">О нас</a></li>
-                <li class="nav-item"><a href="#" class="nav-link">Контакты</a></li>
-                <li class="nav-item"><a href="#" class="nav-link">Поддержка</a></li>
+                <li class="nav-item"><a href="#features" class="nav-link">Возможности</a></li>
+                <li class="nav-item"><a href="#faq" class="nav-link">Вопросы</a></li>
+                <li class="nav-item"><a href="{{ url_for('login') }}" class="nav-link">Вход</a></li>
             </ul>
 
             <a href="/chat" class="btn btn-outline-dark ms-3">Начать</a>
@@ -68,7 +68,7 @@
 </section>
 
 <!-- FEATURES -->
-<section class="features06 py-5">
+<section id="features" class="features06 py-5">
     <div class="container text-center">
 
         <span class="label gray">Возможности ассистента</span>
@@ -78,19 +78,22 @@
 
             <div class="col-lg-4 mb-3">
                 <div class="feature-card p-4 shadow-sm rounded">
-                    Ответы быстро
+                    <span class="ico">⚡</span>
+                    Быстрые ответы по вашей программе ДМС
                 </div>
             </div>
 
             <div class="col-lg-4 mb-3">
                 <div class="feature-card p-4 shadow-sm rounded">
-                    Обработка данных
+                    <span class="ico">📄</span>
+                    Опирается на официальные документы Сбербанка
                 </div>
             </div>
 
             <div class="col-lg-4 mb-3">
                 <div class="feature-card p-4 shadow-sm rounded">
-                    Круглосуточно
+                    <span class="ico">🕑</span>
+                    Доступен круглосуточно, без очередей
                 </div>
             </div>
 
@@ -99,7 +102,7 @@
 </section>
 
 <!-- FAQ -->
-<section class="list02 py-5 bg-light">
+<section id="faq" class="list02 py-5 bg-light">
     <div class="container">
         <div class="text-center mb-5">
             <span class="label gray">Часто задаваемые</span>
