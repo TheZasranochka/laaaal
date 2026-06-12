@@ -1,0 +1,26 @@
+[Unit]
+Description=AI DMS Assistant (Flask + Gunicorn)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ai-dms
+Group=ai-dms
+WorkingDirectory=/opt/ai-dms
+# Переменные берутся из /opt/ai-dms/.env через load_dotenv() в самом приложении.
+ExecStart=/opt/ai-dms/venv/bin/gunicorn -c gunicorn.conf.py app:app
+Restart=on-failure
+RestartSec=5
+# init_ai() индексирует документы на старте — даём запас.
+TimeoutStartSec=180
+
+# Базовое усиление безопасности
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/ai-dms
+
+[Install]
+WantedBy=multi-user.target

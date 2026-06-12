@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>ДМС AI</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white fixed-top shadow-sm">
+    <div class="container">
+        <a href="/" class="navbar-brand fw-bold">AI ассистент ДМС</a>
+
+        <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="nav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a href="/" class="nav-link">Главная</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">О нас</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Контакты</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Поддержка</a></li>
+            </ul>
+
+            <a href="/chat" class="btn btn-outline-dark ms-3">Начать</a>
+        </div>
+    </div>
+</nav>
+
+<!-- HEADER -->
+<section class="header01" style="margin-top: 100px;">
+    <div class="container">
+        <div class="row align-items-center">
+
+            <!-- ЛЕВАЯ ЧАСТЬ -->
+            <div class="col-lg-6">
+                <span class="label">Добро пожаловать</span>
+
+                <h1 class="mt-3"><b>Ваш AI помощник здесь!</b></h1>
+
+                <p class="mt-3">Получите поддержку быстрее с нашим AI.</p>
+
+                <!-- КНОПКА -->
+                <div class="mt-4">
+                    <a href="/chat" class="btn btn-dark w-100">
+                        Начать чат
+                    </a>
+                </div>
+            </div>
+
+            <!-- ПРАВАЯ ЧАСТЬ -->
+            <div class="col-lg-6 mt-4 mt-lg-0">
+                <img class="img-fluid rounded"
+                     src="https://r.mobirisesite.com/2552593/assets/images/photo-1694878981888-7a526050b455.jpeg"
+                     alt="AI">
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features06 py-5">
+    <div class="container text-center">
+
+        <span class="label gray">Возможности ассистента</span>
+        <h2 class="mt-3">Что он может делать</h2>
+
+        <div class="row mt-5">
+
+            <div class="col-lg-4 mb-3">
+                <div class="feature-card p-4 shadow-sm rounded">
+                    Ответы быстро
+                </div>
+            </div>
+
+            <div class="col-lg-4 mb-3">
+                <div class="feature-card p-4 shadow-sm rounded">
+                    Обработка данных
+                </div>
+            </div>
+
+            <div class="col-lg-4 mb-3">
+                <div class="feature-card p-4 shadow-sm rounded">
+                    Круглосуточно
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section class="list02 py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="label gray">Часто задаваемые</span>
+            <h2 class="mt-3">Вопросы и ответы</h2>
+        </div>
+
+        <div class="accordion">
+
+            <details class="mb-3 p-3 bg-white rounded shadow-sm">
+                <summary><b>Что такое AI ассистент?</b></summary>
+                <p class="mt-2">Это помощник по ДМС.</p>
+            </details>
+
+            <details class="mb-3 p-3 bg-white rounded shadow-sm">
+                <summary><b>Как начать чат?</b></summary>
+                <p class="mt-2">Нажмите кнопку "Начать чат".</p>
+            </details>
+
+            <details class="mb-3 p-3 bg-white rounded shadow-sm">
+                <summary><b>Доступен ли он 24/7?</b></summary>
+                <p class="mt-2">Да, всегда.</p>
+            </details>
+
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<section class="footer01 py-4">
+    <div class="container text-center">
+        <p class="mb-0">© 2026 ООО: Мы здесь, чтобы помочь!</p>
+    </div>
+</section>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,20 @@
+# Виртуальное окружение (на сервере пересобирается из requirements.txt)
+venv/
+.venv/
+
+# Секреты — НЕ коммитить
+.env
+
+# База данных
+*.db
+*.sqlite3
+instance/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Прочее
+.DS_Store
+*.log

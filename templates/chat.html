@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чат ДМС AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .sources { font-size: 12px; color: #666; margin-top: 6px; border-top: 1px solid #eee; padding-top: 4px; }
+        .sources a { color: #10a37f; text-decoration: none; }
+        .loading { opacity: 0.6; pointer-events: none; }
+        @keyframes blink { 0%,100%{opacity:.2} 50%{opacity:1} }
+        .typing::after { content: ' ⋮'; animation: blink 1s infinite; }
+    </style>
+</head>
+<body>
+    <div class="chatgpt">
+        <div class="chatgpt-messages" id="messages">
+            <div class="msg bot">Привет! Я ваш AI-помощник по ДМС. Чем могу помочь? 👋</div>
+        </div>
+        <div class="chatgpt-input">
+            <input type="text" id="input" placeholder="Введите вопрос..." autocomplete="off">
+            <button id="send" disabled>➤</button>
+        </div>
+    </div>
+
+    <script>
+        const msgBox = document.getElementById('messages'), input = document.getElementById('input'), btn = document.getElementById('send');
+        
+        function addMsg(role, text, sources=[]) {
+            const d = document.createElement('div'); d.className = `msg ${role}`; d.textContent = text;
+            if(sources.length) {
+                const s = document.createElement('div'); s.className = 'sources';
+                s.innerHTML = '<b>Источники:</b> ' + sources.map(x => `<a href="${x.url||'#'}" target="_blank">${x.title||x}</a>`).join(', ');
+                d.appendChild(s);
+            }
+            msgBox.appendChild(d); msgBox.scrollTop = msgBox.scrollHeight; return d;
+        }
+
+        async function send() {
+            const txt = input.value.trim(); if(!txt) return;
+            addMsg('user', txt); input.value = ''; btn.disabled = true; input.disabled = true;
+            const loader = addMsg('bot', 'Думаю', []); loader.classList.add('typing');
+            
+            try {
+                const res = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({message:txt}) });
+                const data = await res.json(); loader.remove();
+                if(res.ok) addMsg('bot', data.response, (data.sources||[]).map(s=>({title:s})));
+                else addMsg('bot', 'Ошибка сервера. Попробуйте позже.');
+            } catch(e) { loader.remove(); addMsg('bot', 'Ошибка сети.'); }
+            finally { btn.disabled = false; input.disabled = false; input.focus(); }
+        }
+
+        input.addEventListener('keypress', e => { if(e.key==='Enter') send(); });
+        btn.addEventListener('click', send);
+        input.addEventListener('input', () => btn.disabled = !input.value.trim());
+        input.focus();
+    </script>
+</body>
+</html>

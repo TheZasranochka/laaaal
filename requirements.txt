@@ -1,0 +1,15 @@
+Flask==3.0.0
+gunicorn==21.2.0
+pypdf
+python-docx
+pdfplumber
+scikit-learn
+numpy
+requests
+beautifulsoup4
+lxml
+python-dotenv
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Login
+Werkzeug
